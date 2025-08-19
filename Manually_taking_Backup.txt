@@ -1,0 +1,44 @@
+find below script to take ad-hoc backup of databases
+
+Select ' Backup Database' + name + '
+To disk = ''\\DESKTOP-MRU5HQN\db_backup\'  + name + '.bak' +'''' + ' with compression , stats=1;' + CHAR(10) + 'Go'
+FROM sys.sysdatabases
+
+SELECT Format(GETDATE(),'d');
+SELECT convert(varchar(20),GETDATE(),103);
+
+Select ' Backup Database ' + name + ' to disk = ''\\DESKTOP-MRU5HQN\db_backup\'  + name + '_' + convert(varchar(20),GETDATE(),103)+'.bak' +'''' + ' with compression , stats=1;' + CHAR(10) + 'Go'
+FROM sys.sysdatabases
+where name <>'tempdb'
+
+
+Similarly, we can use same script to take backup of log shipping database to perfor reverse log shipping.
+Just, we need to make few changes accordingly.
+
+USE [master]
+GO
+select 'ALTER DATABASE ['+name+'] SET COMPATIBILITY_LEVEL = 150' from sys.databases
+where database_id > 4
+
+Check COMPAT levels -
+SELECT name, compatibility_level FROM sys.databases; 
+
+backup script
+
+SELECT 'BACKUP LOG' + primary_database + '
+TO DISK =''\\DESKTOP-MRU5HQN\ls_backup\drdrls_bkup\'  + primary_database + '.trn' +'''' + ' with compression , norecovery, stats=1;' + CHAR(10) + 'Go'
+FROM msdb.dbo.log_shipping_primary_databases
+
+
+restore script
+
+SELECT 'RESTORE LOG' + secondary_database + '
+FROM DISK =''\\DESKTOP-MRU5HQN\ls_backup\drdrls_bkup\'  + secondary_database + '.trn' +'''' + ' with compression , recovery, stats=1;' + CHAR(10) + 'Go'
+FROM msdb.dbo.log_shipping_secondary_databases
+
+
+NOTE: kindly change the backup path as per requirement.
+Please refer snip 1 and 2 for your reference.
+
+
+

@@ -1,0 +1,47 @@
+------------MIN & MAX MEMORY ALLOCATION------------------
+
+
+EXEC sys.sp_configure N'show advanced options', N'1'  
+RECONFIGURE WITH OVERRIDE
+GO
+DECLARE @ServerMemory int = (SELECT (total_physical_memory_kb/1024) AS total_physical_memory_mb FROM sys.dm_os_sys_memory)
+DECLARE @setMemory int = (SELECT @ServerMemory*(.80))
+DECLARE @setminMemory int = 2048
+EXEC sys.sp_configure N'max server memory (MB)', @setMemory
+
+EXEC sys.sp_configure N'min server memory (MB)', @setminMemory
+GO
+RECONFIGURE WITH OVERRIDE
+GO
+EXEC sys.sp_configure N'show advanced options', N'0'  RECONFIGURE WITH OVERRIDE
+GO
+
+PRINT 'Max Memory Changed Successfully';
+PRINT 'Min Memory Changed Successfully';
+
+
+
+========================
+--select name, is_auto_close_on FROM sys.databases--check autoclose option off
+
+-- Generate the script to set AUTO_CLOSE to OFF for all databases
+USE master;
+Go
+DECLARE @sql NVARCHAR(MAX) = N'';
+SELECT @sql += N'ALTER DATABASE [' + name + N'] SET AUTO_CLOSE OFF;' + CHAR(13)
+FROM sys.databases where is_auto_close_on = 1
+
+EXEC(@sql);
+
+--=====================================
+--Enabling the compression at server level 
+IF EXISTS(select * from sys.configurations where name = 'backup compression default' AND value =  0)   
+BEGIN
+EXEC sp_configure 'backup compression default', 1 ;  
+RECONFIGURE;  
+END
+
+======================================
+
+
+
